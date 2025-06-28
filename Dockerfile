@@ -1,4 +1,4 @@
-FROM swr.cn-north-4.myhuaweicloud.com/openeuler/go:1.23.4-oe2403lts as BUILDER
+FROM openeuler/go:1.24.1-oe2403lts as BUILDER
     
 ENV GO_VERSION=1.23.4
 ENV PATH="/usr/local/go/bin:${PATH}"
@@ -16,8 +16,6 @@ RUN go env -w GOPRIVATE=github.com/opensourceways
 RUN cd /go/src/github.com/opensourceways/jenkins-log-scanner && GO111MODULE=on CGO_ENABLED=0 go build -buildmode=pie --ldflags "-s -extldflags '-Wl,-z,now'"
 RUN curl -sL "https://gitee.com/opensourceway/sec_efficiency_tool/releases/download/1.0.0/gitleaks_8.27.0_linux_x64.tar.gz" -o gitleaks.tar.gz
 RUN tar -xzf gitleaks.tar.gz gitleaks
-RUN wget https://obs-community.obs.cn-north-1.myhuaweicloud.com/obsutil/current/obsutil_linux_amd64.tar.gz
-RUN tar -xzf obsutil_linux_amd64.tar.gz obsutil
 COPY . /go/src/github.com/opensourceways/jenkins-log-scanner
 # copy binary config and utils
 FROM openeuler/openeuler:24.03-lts
