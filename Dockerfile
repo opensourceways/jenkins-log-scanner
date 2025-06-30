@@ -17,6 +17,7 @@ RUN cd /go/src/github.com/opensourceways/jenkins-log-scanner && GO111MODULE=on C
 RUN curl -sL "https://gitee.com/opensourceway/sec_efficiency_tool/releases/download/1.0.0/gitleaks_8.27.0_linux_x64.tar.gz" -o gitleaks.tar.gz
 RUN tar -xzf gitleaks.tar.gz gitleaks
 COPY . /go/src/github.com/opensourceways/jenkins-log-scanner
+COPY ./gitleaks.toml /go/src/github.com/opensourceways/jenkins-log-scanner
 # copy binary config and utils
 FROM openeuler/openeuler:24.03-lts
 RUN dnf -y update && \
