@@ -4,7 +4,7 @@ ENV GO_VERSION=1.23.4
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN dnf update -y && \
-    dnf install -y git wget \
+    dnf install -y git wget && \
     go env -w GOPROXY=https://goproxy.cn,direct
 
 ARG USER
@@ -33,7 +33,7 @@ RUN echo "umask 027" >> /home/jenkins-log-scanner/.bashrc \
     && echo "set +o history" >> /home/jenkins-log-scanner/.bashrc \
     && sed -i "s|HISTSIZE=1000|HISTSIZE=0|" /etc/profile \
     && sed -i "s|PASS_MAX_DAYS[ \t]*99999|PASS_MAX_DAYS 30|" /etc/login.defs \
-    && sed -i '4,6d' /home/om-webserver/.bashrc \
+    && sed -i '4,6d' /home/jenkins-log-scanner/.bashrc
 
 USER jenkins-log-scanner
 WORKDIR /opt/app/
