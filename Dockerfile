@@ -1,4 +1,4 @@
-FROM openeuler/go:1.24.1-oe2403lts as BUILDER
+FROM openeuler/go:1.23.4-oe2403lts as BUILDER
     
 ENV GO_VERSION=1.23.4
 ENV PATH="/usr/local/go/bin:${PATH}"
@@ -24,6 +24,15 @@ RUN dnf -y update && \
     groupadd -g 1000 jenkins-log-scanner && \
     useradd -u 1000 -g jenkins-log-scanner -s /bin/bash -m jenkins-log-scanner && \
     dnf remove all
+
+RUN echo "umask 027" >> /home/jenkins-log-scanner/.bashrc \
+    && echo "umask 027" >> /root/.bashrc \
+    && source /home/om-webserver/.bashrc \
+    && echo "set +o history" >> /etc/bashrc \
+    && echo "set +o history" >> /home/jenkins-log-scanner/.bashrc \
+    && sed -i "s|HISTSIZE=1000|HISTSIZE=0|" /etc/profile \
+    && sed -i "s|PASS_MAX_DAYS[ \t]*99999|PASS_MAX_DAYS 30|" /etc/login.defs \
+    && sed -i '4,6d' /home/om-webserver/.bashrc \
 
 USER jenkins-log-scanner
 WORKDIR /opt/app/
