@@ -14,7 +14,6 @@ RUN echo "machine github.com login $USER password $PASS" > /root/.netrc
 # build binary
 WORKDIR /opt/source
 COPY . .
-RUN ls -l
 RUN go env -w GO111MODULE=on && \
     go env -w CGO_ENABLED=1 && \
     go build -a -o jenkins-log-scanner -buildmode=pie -ldflags "-s -linkmode 'external' -extldflags '-Wl,-z,now'" .
@@ -30,7 +29,7 @@ RUN dnf -y update && \
 
 RUN echo "umask 027" >> /home/jenkins-log-scanner/.bashrc \
     && echo "umask 027" >> /root/.bashrc \
-    && source /home/om-webserver/.bashrc \
+    && source /home/jenkins-log-scanner/.bashrc \
     && echo "set +o history" >> /etc/bashrc \
     && echo "set +o history" >> /home/jenkins-log-scanner/.bashrc \
     && sed -i "s|HISTSIZE=1000|HISTSIZE=0|" /etc/profile \
