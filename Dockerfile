@@ -14,6 +14,7 @@ RUN echo "machine github.com login $USER password $PASS" > /root/.netrc
 # build binary
 WORKDIR /opt/source
 COPY . .
+RUN ls -l
 RUN go env -w GO111MODULE=on && \
     go env -w CGO_ENABLED=1 && \
     go build -a -o jenkins-log-scanner -buildmode=pie -ldflags "-s -linkmode 'external' -extldflags '-Wl,-z,now'" .
