@@ -4,7 +4,7 @@ ENV GO_VERSION=1.23.4
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN dnf update -y && \
-    dnf install -y git wget && \
+    dnf install -y git gcc wget && \
     go env -w GOPROXY=https://goproxy.cn,direct
 
 ARG USER
