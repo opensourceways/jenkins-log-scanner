@@ -10,14 +10,15 @@ RUN dnf update -y && \
 ARG USER
 ARG PASS
 RUN echo "machine github.com login $USER password $PASS" > /root/.netrc
-RUN go env -w GOPRIVATE=github.com/opensourceways
 
 # build binary
-RUN cd /go/src/github.com/opensourceways/jenkins-log-scanner && GO111MODULE=on CGO_ENABLED=0 go build -buildmode=pie --ldflags "-s -extldflags '-Wl,-z,now'"
+WORKDIR /opt/source
+COPY . .
+RUN go env -w GO111MODULE=on && \
+    go env -w CGO_ENABLED=1 && \
+    go build -a -o jenkins-log-scanner -buildmode=pie -ldflags "-s -linkmode 'external' -extldflags '-Wl,-z,now'" .
 RUN curl -sL "https://gitee.com/opensourceway/sec_efficiency_tool/releases/download/1.0.0/gitleaks_8.27.0_linux_x64.tar.gz" -o gitleaks.tar.gz
 RUN tar -xzf gitleaks.tar.gz gitleaks
-COPY . /go/src/github.com/opensourceways/jenkins-log-scanner
-COPY ./gitleaks.toml /go/src/github.com/opensourceways/jenkins-log-scanner
 # copy binary config and utils
 FROM openeuler/openeuler:24.03-lts
 RUN dnf -y update && \
@@ -38,8 +39,9 @@ RUN echo "umask 027" >> /home/jenkins-log-scanner/.bashrc \
 USER jenkins-log-scanner
 WORKDIR /opt/app/
 
-COPY  --chown=jenkins-log-scanner --from=BUILDER /go/src/github.com/opensourceways/jenkins-log-scanner/jenkins-log-scanner /opt/app
+COPY  --chown=jenkins-log-scanner --from=BUILDER /opt/source/jenkins-log-scanner /opt/app/jenkins-log-scanner
+COPY  --chown=jenkins-log-scanner --from=BUILDER /opt/source/gitleaks.toml /opt/app/gitleaks.toml
 
-RUN chmod 550 /opt/app/jenkins-log-scanner
+RUN chmod 550 /opt/app/jenkins-log-scanner &&  chmod 400 /opt/app/jenkins-log-scanner
 
 ENTRYPOINT ["/opt/app/jenkins-log-scanner"]
