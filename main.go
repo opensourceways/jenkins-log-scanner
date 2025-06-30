@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-obs/obs"
-	"github.com/robfig/cron/v3"
 )
 
 // Config 结构体定义配置文件格式
@@ -49,27 +48,12 @@ func main() {
 		log.Fatalf("无法创建结果目录: %v", err)
 	}
 
-	// 设置定时任务
-	c := cron.New(cron.WithParser(
-		cron.NewParser(
-			cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
-		)))
-	_, err := c.AddFunc(appConfig.CronSchedule, func() {
-		log.Println("开始执行每日GitLeaks扫描任务...")
-		if err := runDailyScan(); err != nil {
-			log.Printf("扫描任务执行失败: %v", err)
-		}
-	})
-	if err != nil {
-		log.Fatalf("添加定时任务失败: %v", err)
+	log.Println("开始执行每日GitLeaks扫描任务...")
+	if err := runDailyScan(); err != nil {
+		log.Printf("扫描任务执行失败: %v", err)
 	}
-
-	c.Start()
-	log.Printf("定时任务已启动，按照计划 '%s' 执行扫描...\n", appConfig.CronSchedule)
+	log.Printf("已启动扫描...\n")
 	log.Printf("每个文件夹扫描超时时间: %d秒\n", appConfig.ScanTimeoutSecs)
-
-	// 保持程序运行
-	select {}
 }
 
 func loadConfig(configPath string) error {
