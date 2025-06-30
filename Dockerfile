@@ -41,7 +41,8 @@ WORKDIR /opt/app/
 
 COPY  --chown=jenkins-log-scanner --from=BUILDER /opt/source/jenkins-log-scanner /opt/app/jenkins-log-scanner
 COPY  --chown=jenkins-log-scanner --from=BUILDER /opt/source/gitleaks.toml /opt/app/gitleaks.toml
+COPY  --chown=jenkins-log-scanner --from=BUILDER /opt/source/gitleaks /usr/local/bin/gitleaks
 
-RUN chmod 550 /opt/app/jenkins-log-scanner &&  chmod 400 /opt/app/jenkins-log-scanner
+RUN chmod 550 /opt/app/jenkins-log-scanner &&  chmod 400 /opt/app/jenkins-log-scanner && chmod 500 /usr/local/bin/gitleaks
 
 ENTRYPOINT ["/opt/app/jenkins-log-scanner"]
