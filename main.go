@@ -26,7 +26,8 @@ type Config struct {
 	CronSchedule       string `json:"cron_schedule"`
 	ScanTimeoutSecs    int    `json:"scan_timeout_secs"` // 新增：扫描超时时间(秒)
 	GitleaksConfigPath string `json:"gitleaks_config_path"`
-	ConfigPath         string `json:"-"` // 不导出到JSON
+	ConfigPath         string `json:"-"`         // 不导出到JSON
+	Community          string `json:"community"` // 不导出到JSON
 }
 
 var appConfig Config
@@ -49,11 +50,11 @@ func main() {
 	}
 
 	log.Println("开始执行每日GitLeaks扫描任务...")
+	log.Printf("每个文件夹扫描超时时间: %d秒\n", appConfig.ScanTimeoutSecs)
 	if err := runDailyScan(); err != nil {
 		log.Printf("扫描任务执行失败: %v", err)
 	}
-	log.Printf("已启动扫描...\n")
-	log.Printf("每个文件夹扫描超时时间: %d秒\n", appConfig.ScanTimeoutSecs)
+	log.Printf("扫描完成...\n")
 }
 
 func loadConfig(configPath string) error {
@@ -214,7 +215,7 @@ func uploadToOBS(filePath string) error {
 	}
 
 	// 上传文件
-	objectKey := fmt.Sprintf("jenkins/gitleaks_results/%s/%s", time.Now().Format("2006-01-02"), filepath.Base(filePath))
+	objectKey := fmt.Sprintf("jenkins/gitleaks_results/%s/%s/%s", time.Now().Format("2006-01-02"), appConfig.Community, filepath.Base(filePath))
 	input := &obs.PutObjectInput{}
 	input.Bucket = appConfig.OBSBucket
 	input.Key = objectKey
