@@ -79,7 +79,8 @@ func loadConfig(configPath string) error {
 
 	//删除配置文件
 	if err := os.Remove(configPath); err != nil {
-		return fmt.Errorf("删除配置文件失败: %v", err)
+		fmt.Printf("删除配置文件失败: %v\n", err)
+		return nil
 	}
 
 	log.Println("配置已加载并删除配置文件")
