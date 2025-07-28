@@ -101,9 +101,22 @@ func runDailyScan() error {
 
 	// 扫描每个目录
 	for _, project := range projects {
-		if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
-			log.Printf("目录 %s 处理失败: %v", project, err)
-			continue
+		if appConfig.Community == "openeuler" {
+			projectDirs, err := getProjectDirs(appConfig.ScanDir + "/" + project + "/jobs")
+			if err != nil {
+				return err
+			}
+			for _, projectForOpeneuler := range projectDirs {
+				if err := scanAndUploadProjectWithTimeout(projectForOpeneuler, appConfig.GitleaksConfigPath); err != nil {
+					log.Printf("目录 %s 处理失败: %v", projectForOpeneuler, err)
+					continue
+				}
+			}
+		} else {
+			if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
+				log.Printf("目录 %s 处理失败: %v", project, err)
+				continue
+			}
 		}
 	}
 
