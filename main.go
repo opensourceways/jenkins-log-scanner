@@ -78,10 +78,10 @@ func loadConfig(configPath string) error {
 	appConfig.ConfigPath = configPath
 
 	//删除配置文件
-	if err := os.Remove(configPath); err != nil {
-		fmt.Printf("删除配置文件失败: %v\n", err)
-		return nil
-	}
+	//if err := os.Remove(configPath); err != nil {
+	//	fmt.Printf("删除配置文件失败: %v\n", err)
+	//	return nil
+	//}
 
 	log.Println("配置已加载并删除配置文件")
 	return nil
@@ -102,7 +102,8 @@ func runDailyScan() error {
 	// 扫描每个目录
 	for _, project := range projects {
 		if appConfig.Community == "openeuler" {
-			projectDirs, err := getProjectDirs(appConfig.ScanDir + "/" + project + "/jobs")
+			projectName := filepath.Base(project)
+			projectDirs, err := getProjectDirs(appConfig.ScanDir + "/" + projectName + "/jobs")
 			if err != nil {
 				return err
 			}
