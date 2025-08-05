@@ -78,10 +78,10 @@ func loadConfig(configPath string) error {
 	appConfig.ConfigPath = configPath
 
 	//删除配置文件
-	//if err := os.Remove(configPath); err != nil {
-	//	fmt.Printf("删除配置文件失败: %v\n", err)
-	//	return nil
-	//}
+	if err := os.Remove(configPath); err != nil {
+		fmt.Printf("删除配置文件失败: %v\n", err)
+		return nil
+	}
 
 	log.Println("配置已加载并删除配置文件")
 	return nil
@@ -92,24 +92,34 @@ func runDailyScan() error {
 	if err := cleanupPreviousResults(); err != nil {
 		return fmt.Errorf("清理前一天结果失败: %v", err)
 	}
+	err := doScanForOpenEuler(appConfig.ScanDir)
+	if err != nil {
+		return err
+	}
 
-	// 获取所有需要扫描的目录
-	projects, err := getProjectDirs(appConfig.ScanDir)
+	return nil
+}
+
+func doScanForOpenEuler(scanDir string) error {
+	projects, err := getProjectDirs(scanDir)
 	if err != nil {
 		return fmt.Errorf("获取目录列表失败: %v", err)
 	}
-
-	// 扫描每个目录
 	for _, project := range projects {
 		if appConfig.Community == "openeuler" {
-			projectName := filepath.Base(project)
-			projectDirs, err := getProjectDirs(appConfig.ScanDir + "/" + projectName + "/jobs")
+			projectDirs, err := getProjectDirs(project)
 			if err != nil {
 				return err
 			}
-			for _, projectForOpeneuler := range projectDirs {
-				if err := scanAndUploadProjectWithTimeout(projectForOpeneuler, appConfig.GitleaksConfigPath); err != nil {
-					log.Printf("目录 %s 处理失败: %v", projectForOpeneuler, err)
+
+			if containsJobs(projectDirs) {
+				err := doScanForOpenEuler(project + "/jobs")
+				if err != nil {
+					return err
+				}
+			} else {
+				if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
+					log.Printf("目录 %s 处理失败: %v", project, err)
 					continue
 				}
 			}
@@ -120,8 +130,16 @@ func runDailyScan() error {
 			}
 		}
 	}
-
 	return nil
+}
+
+func containsJobs(projectDirs []string) bool {
+	for _, projectDir := range projectDirs {
+		if filepath.Base(projectDir) == "jobs" {
+			return true
+		}
+	}
+	return false
 }
 
 func cleanupPreviousResults() error {
