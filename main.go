@@ -92,7 +92,7 @@ func runDailyScan() error {
 	if err := cleanupPreviousResults(); err != nil {
 		return fmt.Errorf("清理前一天结果失败: %v", err)
 	}
-	err := doScanForOpenEuler(appConfig.ScanDir)
+	err := doScan(appConfig.ScanDir)
 	if err != nil {
 		return err
 	}
@@ -100,28 +100,21 @@ func runDailyScan() error {
 	return nil
 }
 
-func doScanForOpenEuler(scanDir string) error {
+func doScan(scanDir string) error {
 	projects, err := getProjectDirs(scanDir)
 	if err != nil {
 		return fmt.Errorf("获取目录列表失败: %v", err)
 	}
 	for _, project := range projects {
-		if appConfig.Community == "openeuler" {
-			projectDirs, err := getProjectDirs(project)
+		projectDirs, err := getProjectDirs(project)
+		if err != nil {
+			return err
+		}
+
+		if containsJobs(projectDirs) {
+			err := doScan(project + "/jobs")
 			if err != nil {
 				return err
-			}
-
-			if containsJobs(projectDirs) {
-				err := doScanForOpenEuler(project + "/jobs")
-				if err != nil {
-					return err
-				}
-			} else {
-				if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
-					log.Printf("目录 %s 处理失败: %v", project, err)
-					continue
-				}
 			}
 		} else {
 			if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
