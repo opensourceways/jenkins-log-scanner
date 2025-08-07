@@ -182,6 +182,11 @@ func getProjectDirs(root string) ([]string, error) {
 
 func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath string) error {
 	projectName := filepath.Base(projectPath)
+	stat, err := os.Stat(projectPath)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("开始扫描%s,大小为%d\n", projectPath, stat.Size())
 	resultFile := filepath.Join(appConfig.ResultDir, fmt.Sprintf("result_%s.json", projectName))
 
 	// 创建带有超时的context
@@ -200,7 +205,7 @@ func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath stri
 	cmd.Stderr = &stderr
 
 	startTime := time.Now()
-	err := cmd.Run()
+	err = cmd.Run()
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -208,7 +213,7 @@ func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath stri
 			return fmt.Errorf("扫描超时(超过 %d 秒)", appConfig.ScanTimeoutSecs)
 		}
 		// 非超时就是扫出问题了，这里没开打印敏感信息
-		fmt.Println("gitleaks执行失败: %v, 错误输出: %s", err, stderr.String())
+		fmt.Printf("gitleaks执行失败: %v, 错误输出: %s\n", err, stderr.String())
 	}
 
 	log.Printf("目录 %s 扫描完成, 耗时: %v", projectName, duration)
