@@ -1,0 +1,49 @@
+title = "Low entropy passwords"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "low-entropy-api-key"
+description = "Detected a Generic API Key, potentially exposing access to various services and sensitive operations."
+regex = '''(?i)[\w.-]{0,50}?(?:access|auth|(?-i:[Aa]pi|API)|credential|BLUE_NFS_PSW|creds|key|passwd|password|secret|token)(?:[ \t\w.-]{0,20})(?:[\s|']|[\s|"]){0,3}(?:=|>|:{1,3}=|\|\|:|<=|=>|:|\?=)(?:'|\"|\s|=|\x60){0,5}([\w.=-]{5,150})(?:['|\"|\n|\r|\s|\x60|;]|$)'''
+entropy = 2.5
+keywords = [
+    "access",
+    "api",
+    "auth",
+    "key",
+    "NFS_PSW",
+    "credential",
+    "creds",
+    "passwd",
+    "password",
+    "secret",
+    "token",
+]
+
+[[rules]]
+id = "low-entropy-api-key1"
+description = "Detected a Generic API Key, potentially exposing access to various services and sensitive operations."
+regex = '''\b\w*_PSW\s*[:=]\s*['"]?([\w.@=-]{5,150})(?:['"\s;]|$)'''
+entropy = 2.5  # 降低熵值阈值或设为 0
+keywords = [
+    "access",
+    "api",
+    "auth",
+    "key",
+    "_PSW", # 显式添加
+    "credential",
+    "creds",
+    "passwd",
+    "password",
+    "secret",
+    "token",
+]
+
+[[rules]]
+id = "git-url-credentials"
+description = "Detect passwords in Git clone URLs (username:password@domain.com)"
+regex = '''(?i)(?:https?|git|ssh|ftp)://[^\s/:]+:([^\s@]+?(?:@[^\s@]+?)*)@[^\s]+'''
+entropy = 2.5
+keywords = ["http://", "git://", "ssh://", "ftp://"]
