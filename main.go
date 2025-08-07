@@ -92,22 +92,47 @@ func runDailyScan() error {
 	if err := cleanupPreviousResults(); err != nil {
 		return fmt.Errorf("清理前一天结果失败: %v", err)
 	}
-
-	// 获取所有需要扫描的目录
-	projects, err := getProjectDirs(appConfig.ScanDir)
+	err := doScan(appConfig.ScanDir)
 	if err != nil {
-		return fmt.Errorf("获取目录列表失败: %v", err)
-	}
-
-	// 扫描每个目录
-	for _, project := range projects {
-		if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
-			log.Printf("目录 %s 处理失败: %v", project, err)
-			continue
-		}
+		return err
 	}
 
 	return nil
+}
+
+func doScan(scanDir string) error {
+	projects, err := getProjectDirs(scanDir)
+	if err != nil {
+		return fmt.Errorf("获取目录列表失败: %v", err)
+	}
+	for _, project := range projects {
+		projectDirs, err := getProjectDirs(project)
+		if err != nil {
+			return err
+		}
+
+		if containsJobs(projectDirs) {
+			err := doScan(project + "/jobs")
+			if err != nil {
+				return err
+			}
+		} else {
+			if err := scanAndUploadProjectWithTimeout(project, appConfig.GitleaksConfigPath); err != nil {
+				log.Printf("目录 %s 处理失败: %v", project, err)
+				continue
+			}
+		}
+	}
+	return nil
+}
+
+func containsJobs(projectDirs []string) bool {
+	for _, projectDir := range projectDirs {
+		if filepath.Base(projectDir) == "jobs" {
+			return true
+		}
+	}
+	return false
 }
 
 func cleanupPreviousResults() error {
@@ -157,6 +182,11 @@ func getProjectDirs(root string) ([]string, error) {
 
 func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath string) error {
 	projectName := filepath.Base(projectPath)
+	stat, err := os.Stat(projectPath)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("开始扫描%s,大小为%d\n", projectPath, stat.Size())
 	resultFile := filepath.Join(appConfig.ResultDir, fmt.Sprintf("result_%s.json", projectName))
 
 	// 创建带有超时的context
@@ -175,7 +205,7 @@ func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath stri
 	cmd.Stderr = &stderr
 
 	startTime := time.Now()
-	err := cmd.Run()
+	err = cmd.Run()
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -183,7 +213,7 @@ func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath stri
 			return fmt.Errorf("扫描超时(超过 %d 秒)", appConfig.ScanTimeoutSecs)
 		}
 		// 非超时就是扫出问题了，这里没开打印敏感信息
-		fmt.Println("gitleaks执行失败: %v, 错误输出: %s", err, stderr.String())
+		fmt.Printf("gitleaks执行失败: %v, 错误输出: %s\n", err, stderr.String())
 	}
 
 	log.Printf("目录 %s 扫描完成, 耗时: %v", projectName, duration)
