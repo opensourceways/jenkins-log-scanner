@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-obs/obs"
@@ -17,17 +18,18 @@ import (
 
 // Config 结构体定义配置文件格式
 type Config struct {
-	ScanDir            string `json:"scan_dir"`
-	ResultDir          string `json:"result_dir"`
-	OBSBucket          string `json:"obs_bucket"`
-	OBSUrl             string `json:"obs_url"`
-	OBSAccessKey       string `json:"obs_access_key"`
-	OBSSecretKey       string `json:"obs_secret_key"`
-	CronSchedule       string `json:"cron_schedule"`
-	ScanTimeoutSecs    int    `json:"scan_timeout_secs"` // 新增：扫描超时时间(秒)
-	GitleaksConfigPath string `json:"gitleaks_config_path"`
-	ConfigPath         string `json:"-"`         // 不导出到JSON
-	Community          string `json:"community"` // 不导出到JSON
+	ScanDir            string   `json:"scan_dir"`
+	ResultDir          string   `json:"result_dir"`
+	OBSBucket          string   `json:"obs_bucket"`
+	OBSUrl             string   `json:"obs_url"`
+	OBSAccessKey       string   `json:"obs_access_key"`
+	OBSSecretKey       string   `json:"obs_secret_key"`
+	CronSchedule       string   `json:"cron_schedule"`
+	ScanTimeoutSecs    int      `json:"scan_timeout_secs"` // 新增：扫描超时时间(秒)
+	GitleaksConfigPath string   `json:"gitleaks_config_path"`
+	ConfigPath         string   `json:"-"`             // 不导出到JSON
+	Community          string   `json:"community"`     // 不导出到JSON
+	ScanBlackList      []string `json:"scanBlackList"` // 不导出到JSON
 }
 
 var appConfig Config
@@ -111,6 +113,13 @@ func doScan(scanDir string) error {
 			return err
 		}
 
+		for _, scanBlackPrefix := range appConfig.ScanBlackList {
+			if strings.HasPrefix(project, scanBlackPrefix) {
+				fmt.Println("跳过", scanBlackPrefix)
+				return nil
+			}
+		}
+
 		if containsJobs(projectDirs) {
 			err := doScan(project + "/jobs")
 			if err != nil {
@@ -180,13 +189,38 @@ func getProjectDirs(root string) ([]string, error) {
 	return dirs, nil
 }
 
+func DirSize(path string) (int64, error) {
+	var size int64
+	dirEntries, err := os.ReadDir(path)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, entry := range dirEntries {
+		if entry.IsDir() {
+			subDirSize, err := DirSize(filepath.Join(path, entry.Name()))
+			if err != nil {
+				return 0, err
+			}
+			size += subDirSize
+		} else {
+			info, err := entry.Info()
+			if err != nil {
+				return 0, err
+			}
+			size += info.Size()
+		}
+	}
+	return size, nil
+}
+
 func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath string) error {
 	projectName := filepath.Base(projectPath)
-	stat, err := os.Stat(projectPath)
+	stat, err := DirSize(projectPath)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("开始扫描%s,大小为%d\n", projectPath, stat.Size())
+	fmt.Printf("开始扫描%s,大小为%d\n", projectPath, stat)
 	resultFile := filepath.Join(appConfig.ResultDir, fmt.Sprintf("result_%s.json", projectName))
 
 	// 创建带有超时的context
