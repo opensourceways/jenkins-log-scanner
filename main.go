@@ -290,7 +290,8 @@ func uploadToOBS(filePath string) error {
 	// 取值范围：
 	//
 	// 大于0的正整型，单位：天。
-	input.Expires = 1
-	_, err = client.PutObject(input)
+	input.Expires = 5
+	output, err := client.PutObject(input)
+	fmt.Println("filepath obs扫描结果路径", filePath, output.ObjectUrl)
 	return err
 }
