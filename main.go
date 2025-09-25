@@ -221,7 +221,7 @@ func scanAndUploadProjectWithTimeout(projectPath string, gitleaksConfigPath stri
 		return err
 	}
 	fmt.Printf("开始扫描%s,大小为%d\n", projectPath, stat)
-	resultFile := filepath.Join(appConfig.ResultDir, fmt.Sprintf("result_%s.json", projectName))
+	resultFile := filepath.Join(appConfig.ResultDir, fmt.Sprintf("result_%s_%s.json", strings.ReplaceAll(projectPath, "/", "%"), projectName))
 
 	// 创建带有超时的context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(appConfig.ScanTimeoutSecs)*time.Second)
